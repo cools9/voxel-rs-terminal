@@ -48,22 +48,19 @@ fn main(){
     );
 
     generate_terrain(world_size as i64, &mut world);
+    let mesh = build_terrain_mesh(&world, world_size as i64, &thread);
+    let model = unsafe{rl.load_model_from_mesh(&thread, mesh.make_weak()).unwrap()};
+    
+
     while !rl.window_should_close() {
-        
         let mut d = rl.begin_drawing(&thread);
-        d.rl_disable_backface_culling();
         camera.update_camera(CameraMode::CAMERA_FREE);
         d.clear_background(Color::SKYBLUE);
         d.draw_fps(0, 0);
-        d.rl_enable_backface_culling();
         d.disable_cursor();
         {
             let mut c = d.begin_mode3D(camera);
-            
-                    //c.draw_grid(20, 1.0);
-            render_terrain(&mut c, &world, world_size as i64);
-            //c.draw_grid(10, 1.0);
-            // Drop ends 3D mode automatically.
+            c.draw_model(&model, Vector3::zero(), 1.0, Color::WHITE);
         }
     }
 }
@@ -168,46 +165,89 @@ fn is_solid(world: &World, pos: VoxelPos) -> bool {
     world.contains_key(&pos)
 }
 
-fn render_terrain(c: &mut RaylibMode3D<RaylibDrawHandle>, world: &World, world_size: i64) {
-    for x in 0..world_size {
-        for y in 0..60{
-        for z in 0..world_size {
-            let pos = VoxelPos { x: x, y: y, z: z };
+fn build_terrain_mesh(world: &World, world_size: i64, thread: &RaylibThread) -> Mesh {
+    let mut verts: Vec<Vector3> = Vec::new();
+    let mut uvs: Vec<Vector2> = Vec::new();
+    let mut colors: Vec<Color> = Vec::new();
 
-            // only draw if a voxel actually exists here
-            if let Some(_voxel) = world.get(&pos) {
-                let mut visible_faces = [VoxelFaces::Top; 6]; // placeholder values, only first `count` are valid
-                let mut count = 0;
+    let mut push_tri = |v0: Vector3, v1: Vector3, v2: Vector3, color: Color| {
+        verts.push(v0);
+        verts.push(v1);
+        verts.push(v2);
+        uvs.push(Vector2::new(0.0, 0.0));
+        uvs.push(Vector2::new(1.0, 0.0));
+        uvs.push(Vector2::new(1.0, 1.0));
+        colors.push(color);
+        colors.push(color);
+        colors.push(color);
+    };
+
+    for x in 0..world_size {
+        for y in 0..60 {
+            for z in 0..world_size {
+                let pos = VoxelPos { x, y, z };
+                if world.get(&pos).is_none() {
+                    continue;
+                }
+
+                let xf = x as f32;
+                let yf = y as f32;
+                let zf = z as f32;
 
                 if !is_solid(world, VoxelPos { x: pos.x, y: pos.y + 1, z: pos.z }) {
-                    visible_faces[count] = VoxelFaces::Top;
-                    count += 1;
+                    let e = Vector3::new(xf,       yf + 1.0, zf);
+                    let f = Vector3::new(xf + 1.0, yf + 1.0, zf);
+                    let g = Vector3::new(xf + 1.0, yf + 1.0, zf + 1.0);
+                    let h = Vector3::new(xf,       yf + 1.0, zf + 1.0);
+                    push_tri(e, g, f, Color::GREEN);
+                    push_tri(e, h, g, Color::GREEN);
                 }
                 if !is_solid(world, VoxelPos { x: pos.x, y: pos.y - 1, z: pos.z }) {
-                    visible_faces[count] = VoxelFaces::Bottom;
-                    count += 1;
+                    let a = Vector3::new(xf,       yf, zf);
+                    let b = Vector3::new(xf + 1.0, yf, zf);
+                    let cc = Vector3::new(xf + 1.0, yf, zf + 1.0);
+                    let d = Vector3::new(xf,       yf, zf + 1.0);
+                    push_tri(a, b, cc, Color::BROWN);
+                    push_tri(a, cc, d, Color::BROWN);
                 }
                 if !is_solid(world, VoxelPos { x: pos.x, y: pos.y, z: pos.z - 1 }) {
-                    visible_faces[count] = VoxelFaces::Front;
-                    count += 1;
+                    let a = Vector3::new(xf,       yf,       zf);
+                    let b = Vector3::new(xf + 1.0, yf,       zf);
+                    let e = Vector3::new(xf,       yf + 1.0, zf);
+                    let f = Vector3::new(xf + 1.0, yf + 1.0, zf);
+                    push_tri(a, e, f, Color::BLUE);
+                    push_tri(a, f, b, Color::BLUE);
                 }
                 if !is_solid(world, VoxelPos { x: pos.x, y: pos.y, z: pos.z + 1 }) {
-                    visible_faces[count] = VoxelFaces::Back;
-                    count += 1;
+                    let d = Vector3::new(xf,       yf,       zf + 1.0);
+                    let cc = Vector3::new(xf + 1.0, yf,       zf + 1.0);
+                    let g = Vector3::new(xf + 1.0, yf + 1.0, zf + 1.0);
+                    let h = Vector3::new(xf,       yf + 1.0, zf + 1.0);
+                    push_tri(d, cc, g, Color::ORANGE);
+                    push_tri(d, g, h, Color::ORANGE);
                 }
                 if !is_solid(world, VoxelPos { x: pos.x - 1, y: pos.y, z: pos.z }) {
-                    visible_faces[count] = VoxelFaces::Left;
-                    count += 1;
+                    let a = Vector3::new(xf, yf,       zf);
+                    let d = Vector3::new(xf, yf,       zf + 1.0);
+                    let e = Vector3::new(xf, yf + 1.0, zf);
+                    let h = Vector3::new(xf, yf + 1.0, zf + 1.0);
+                    push_tri(a, d, h, Color::PURPLE);
+                    push_tri(a, h, e, Color::PURPLE);
                 }
                 if !is_solid(world, VoxelPos { x: pos.x + 1, y: pos.y, z: pos.z }) {
-                    visible_faces[count] = VoxelFaces::Right;
-                    count += 1;
+                    let b = Vector3::new(xf + 1.0, yf,       zf);
+                    let cc = Vector3::new(xf + 1.0, yf,       zf + 1.0);
+                    let f = Vector3::new(xf + 1.0, yf + 1.0, zf);
+                    let g = Vector3::new(xf + 1.0, yf + 1.0, zf + 1.0);
+                    push_tri(b, f, g, Color::YELLOW);
+                    push_tri(b, g, cc, Color::YELLOW);
                 }
-
-                make_cube(c, x as f32, y as f32, z as f32, &visible_faces[..count]);
             }
         }
-
     }
-}
+
+    Mesh::gen_mesh(&verts, &uvs)
+        .colors(&colors)
+        .build(thread)
+        .unwrap()
 }
