@@ -1,7 +1,7 @@
-use raylib::ffi::{CSSPalette, RaylibPalette};
 use raylib::prelude::*;
 use raylib::consts::CameraMode;
 use std::collections::HashMap;
+use rustc_hash::FxHashMap;
 
 use crate::VoxelType::NoName;
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]    
@@ -29,7 +29,7 @@ enum VoxelFaces{
     Right
 }
 
-type World = HashMap<VoxelPos, Voxel>;
+type World = FxHashMap<VoxelPos, Voxel>;
 
 fn main(){
     let (mut rl, thread) = raylib::init()
@@ -37,9 +37,8 @@ fn main(){
     .title("demo")
     .fullscreen()
     .vsync()
-    .msaa_4x()
     .build();
-    let mut world:World=HashMap::new();
+    let mut world:World=HashMap::default();
     let world_size:u64=128;
     let mut camera = Camera3D::perspective(
         Vector3::new(4.0, 4.0, 4.0),
@@ -60,13 +59,9 @@ fn main(){
         d.disable_cursor();
         {
             let mut c = d.begin_mode3D(camera);
-            for x in 0..world_size{
-                for z in 0..world_size{
+            
                     //c.draw_grid(20, 1.0);
-                    make_cube(&mut c, x as f32, 0.0, z as f32,&mut world);
-                    //c.draw_cube(Vector3::new(x as f32,0.0,z as f32), 1.0, 1.0, 1.0, Color::RED);
-                }
-            }
+            render_terrain(&mut c, &world, world_size as i64);
             //c.draw_grid(10, 1.0);
             // Drop ends 3D mode automatically.
         }
@@ -143,18 +138,20 @@ fn make_right_face(c: &mut RaylibMode3D<RaylibDrawHandle>, x: f32, y: f32, z: f3
 fn generate_terrain(world_size:i64,world: &mut World){
     
     for x in 0..world_size{
-        for z in 0..world_size{
-            let block_pos= VoxelPos{
-                    x:x as i64,
-                    y:0,
-                    z:z as i64
-            };
-            world.insert(block_pos, Voxel { kind: NoName });
+        for y in 0..60{
+            for z in 0..world_size{
+                let block_pos= VoxelPos{
+                        x:x as i64,
+                        y:y as i64,
+                        z:z as i64
+                };
+                world.insert(block_pos, Voxel { kind: NoName });
+            }
         }
     }
 }
 
-fn make_cube(c: &mut RaylibMode3D<RaylibDrawHandle>, x: f32, y: f32, z: f32, world: &mut World,faces: &[VoxelFaces]) {
+fn make_cube(c: &mut RaylibMode3D<RaylibDrawHandle>, x: f32, y: f32, z: f32,faces: &[VoxelFaces]) {
     for face in faces{
         match face{
             VoxelFaces::Top => make_top_face(c, x, y, z),
@@ -173,34 +170,44 @@ fn is_solid(world: &World, pos: VoxelPos) -> bool {
 
 fn render_terrain(c: &mut RaylibMode3D<RaylibDrawHandle>, world: &World, world_size: i64) {
     for x in 0..world_size {
+        for y in 0..60{
         for z in 0..world_size {
-            let pos = VoxelPos { x: x, y: 0, z: z };
+            let pos = VoxelPos { x: x, y: y, z: z };
 
             // only draw if a voxel actually exists here
             if let Some(_voxel) = world.get(&pos) {
-                let mut visible_faces = Vec::new();
+                let mut visible_faces = [VoxelFaces::Top; 6]; // placeholder values, only first `count` are valid
+                let mut count = 0;
 
                 if !is_solid(world, VoxelPos { x: pos.x, y: pos.y + 1, z: pos.z }) {
-                    visible_faces.push(VoxelFaces::Top);
+                    visible_faces[count] = VoxelFaces::Top;
+                    count += 1;
                 }
                 if !is_solid(world, VoxelPos { x: pos.x, y: pos.y - 1, z: pos.z }) {
-                    visible_faces.push(VoxelFaces::Bottom);
+                    visible_faces[count] = VoxelFaces::Bottom;
+                    count += 1;
                 }
                 if !is_solid(world, VoxelPos { x: pos.x, y: pos.y, z: pos.z - 1 }) {
-                    visible_faces.push(VoxelFaces::Front);
+                    visible_faces[count] = VoxelFaces::Front;
+                    count += 1;
                 }
                 if !is_solid(world, VoxelPos { x: pos.x, y: pos.y, z: pos.z + 1 }) {
-                    visible_faces.push(VoxelFaces::Back);
+                    visible_faces[count] = VoxelFaces::Back;
+                    count += 1;
                 }
                 if !is_solid(world, VoxelPos { x: pos.x - 1, y: pos.y, z: pos.z }) {
-                    visible_faces.push(VoxelFaces::Left);
+                    visible_faces[count] = VoxelFaces::Left;
+                    count += 1;
                 }
                 if !is_solid(world, VoxelPos { x: pos.x + 1, y: pos.y, z: pos.z }) {
-                    visible_faces.push(VoxelFaces::Right);
+                    visible_faces[count] = VoxelFaces::Right;
+                    count += 1;
                 }
 
-                make_cube(c, x, 0, z,world, &visible_faces);
+                make_cube(c, x as f32, y as f32, z as f32, &visible_faces[..count]);
             }
         }
+
     }
+}
 }

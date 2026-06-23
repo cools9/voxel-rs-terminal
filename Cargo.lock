@@ -328,6 +328,7 @@ name = "voxel-rs-terminal"
 version = "0.1.0"
 dependencies = [
  "raylib",
+ "rustc-hash",
 ]
 
 [[package]]

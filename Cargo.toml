@@ -5,3 +5,4 @@ edition = "2024"
 
 [dependencies]
 raylib = "6.0.0"
+rustc-hash = "2.1.2"
