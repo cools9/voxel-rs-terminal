@@ -1,9 +1,20 @@
 use raylib::prelude::*;
-use raylib::consts::CameraMode;
+//use raylib::consts::CameraMode;
 use rustc_hash::FxHashMap;
 
 use crate::VoxelType::NoName;
 
+struct Player {
+    x: i64,
+    y: i64,
+    z: i64,
+}
+enum movement {
+    FRONT,
+    BACK,
+    LEFT,
+    RIGHT,
+}
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 struct Voxel {
     kind: VoxelType,
@@ -40,10 +51,10 @@ fn main() {
         .fullscreen()
         .vsync()
         .build();
-
-    let world_size_chunks: i64 = 4; // 4x4 chunks => 64x64 voxels wide
+    let world_size_chunks: i64 = 4;
+    let mut player = Player { x: 0, y: 0, z: 0 };
     let mut camera = Camera3D::perspective(
-        Vector3::new(4.0, 60.0, 4.0),
+        Vector3::new(player.x as f32, player.y as f32, player.z as f32),
         Vector3::new(0.0, 0.0, 0.0),
         Vector3::new(0.0, 1.0, 0.0),
         45.0,
@@ -52,12 +63,38 @@ fn main() {
     let world = generate_world(world_size_chunks);
     let models = build_world_meshes(&world, &thread, &mut rl);
 
+    let mut direction = movement::FRONT;
     while !rl.window_should_close() {
+        rl.disable_cursor(); // call this once outside the loop ideally, not every frame
+
+        match rl.get_key_pressed() {
+            Some(KeyboardKey::KEY_UP) | Some(KeyboardKey::KEY_W) => {
+                direction = movement::FRONT;
+            }
+            Some(KeyboardKey::KEY_DOWN) | Some(KeyboardKey::KEY_S) => {
+                direction = movement::BACK;
+            }
+            Some(KeyboardKey::KEY_LEFT) | Some(KeyboardKey::KEY_A) => {
+                direction = movement::LEFT;
+            }
+            Some(KeyboardKey::KEY_RIGHT) | Some(KeyboardKey::KEY_D) => {
+                direction = movement::RIGHT;
+            }
+            _ => {}
+        }
+
+        match direction {
+            movement::FRONT => player.x += 5,
+            movement::BACK => player.x -= 5,
+            movement::LEFT => player.z -= 5,
+            movement::RIGHT => player.z += 5,
+        }
+        camera.position = Vector3::new(player.x as f32, player.y as f32, player.z as f32);
+        camera.target = Vector3::new(player.x as f32, player.y as f32, player.z as f32 + 1.0);
         let mut d = rl.begin_drawing(&thread);
-        camera.update_camera(CameraMode::CAMERA_FREE);
         d.clear_background(Color::SKYBLUE);
         d.draw_fps(0, 0);
-        d.disable_cursor();
+
         {
             let mut c = d.begin_mode3D(camera);
             for (chunk_pos, model) in &models {
@@ -156,7 +193,14 @@ fn build_chunk_mesh(world: &World, chunk_pos: ChunkPos, thread: &RaylibThread) -
             z: base_z + local_pos.z,
         };
 
-        if !is_solid_world(world, VoxelPos { x: world_pos.x, y: world_pos.y + 1, z: world_pos.z }) {
+        if !is_solid_world(
+            world,
+            VoxelPos {
+                x: world_pos.x,
+                y: world_pos.y + 1,
+                z: world_pos.z,
+            },
+        ) {
             let e = Vector3::new(xf, yf + 1.0, zf);
             let f = Vector3::new(xf + 1.0, yf + 1.0, zf);
             let g = Vector3::new(xf + 1.0, yf + 1.0, zf + 1.0);
@@ -164,7 +208,14 @@ fn build_chunk_mesh(world: &World, chunk_pos: ChunkPos, thread: &RaylibThread) -
             push_tri(e, g, f, Color::GREEN);
             push_tri(e, h, g, Color::GREEN);
         }
-        if !is_solid_world(world, VoxelPos { x: world_pos.x, y: world_pos.y - 1, z: world_pos.z }) {
+        if !is_solid_world(
+            world,
+            VoxelPos {
+                x: world_pos.x,
+                y: world_pos.y - 1,
+                z: world_pos.z,
+            },
+        ) {
             let a = Vector3::new(xf, yf, zf);
             let b = Vector3::new(xf + 1.0, yf, zf);
             let cc = Vector3::new(xf + 1.0, yf, zf + 1.0);
@@ -172,7 +223,14 @@ fn build_chunk_mesh(world: &World, chunk_pos: ChunkPos, thread: &RaylibThread) -
             push_tri(a, b, cc, Color::BROWN);
             push_tri(a, cc, d, Color::BROWN);
         }
-        if !is_solid_world(world, VoxelPos { x: world_pos.x, y: world_pos.y, z: world_pos.z - 1 }) {
+        if !is_solid_world(
+            world,
+            VoxelPos {
+                x: world_pos.x,
+                y: world_pos.y,
+                z: world_pos.z - 1,
+            },
+        ) {
             let a = Vector3::new(xf, yf, zf);
             let b = Vector3::new(xf + 1.0, yf, zf);
             let e = Vector3::new(xf, yf + 1.0, zf);
@@ -180,7 +238,14 @@ fn build_chunk_mesh(world: &World, chunk_pos: ChunkPos, thread: &RaylibThread) -
             push_tri(a, e, f, Color::BLUE);
             push_tri(a, f, b, Color::BLUE);
         }
-        if !is_solid_world(world, VoxelPos { x: world_pos.x, y: world_pos.y, z: world_pos.z + 1 }) {
+        if !is_solid_world(
+            world,
+            VoxelPos {
+                x: world_pos.x,
+                y: world_pos.y,
+                z: world_pos.z + 1,
+            },
+        ) {
             let d = Vector3::new(xf, yf, zf + 1.0);
             let cc = Vector3::new(xf + 1.0, yf, zf + 1.0);
             let g = Vector3::new(xf + 1.0, yf + 1.0, zf + 1.0);
@@ -188,7 +253,14 @@ fn build_chunk_mesh(world: &World, chunk_pos: ChunkPos, thread: &RaylibThread) -
             push_tri(d, cc, g, Color::ORANGE);
             push_tri(d, g, h, Color::ORANGE);
         }
-        if !is_solid_world(world, VoxelPos { x: world_pos.x - 1, y: world_pos.y, z: world_pos.z }) {
+        if !is_solid_world(
+            world,
+            VoxelPos {
+                x: world_pos.x - 1,
+                y: world_pos.y,
+                z: world_pos.z,
+            },
+        ) {
             let a = Vector3::new(xf, yf, zf);
             let d = Vector3::new(xf, yf, zf + 1.0);
             let e = Vector3::new(xf, yf + 1.0, zf);
@@ -196,7 +268,14 @@ fn build_chunk_mesh(world: &World, chunk_pos: ChunkPos, thread: &RaylibThread) -
             push_tri(a, d, h, Color::PURPLE);
             push_tri(a, h, e, Color::PURPLE);
         }
-        if !is_solid_world(world, VoxelPos { x: world_pos.x + 1, y: world_pos.y, z: world_pos.z }) {
+        if !is_solid_world(
+            world,
+            VoxelPos {
+                x: world_pos.x + 1,
+                y: world_pos.y,
+                z: world_pos.z,
+            },
+        ) {
             let b = Vector3::new(xf + 1.0, yf, zf);
             let cc = Vector3::new(xf + 1.0, yf, zf + 1.0);
             let f = Vector3::new(xf + 1.0, yf + 1.0, zf);
