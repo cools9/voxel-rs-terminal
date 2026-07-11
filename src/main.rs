@@ -35,6 +35,10 @@ fn main() {
             movement::LEFT
         } else if rl.is_key_down(KeyboardKey::KEY_D) {
             movement::RIGHT
+        } else if rl.is_key_down(KeyboardKey::KEY_SPACE) {
+            movement::UP
+        } else if rl.is_key_down(KeyboardKey::KEY_LEFT_SHIFT) {
+            movement::DOWN
         } else {
             movement::NONE
         };
@@ -45,6 +49,8 @@ fn main() {
             movement::LEFT => player.z -= 5,
             movement::RIGHT => player.z += 5,
             movement::NONE => {}
+            movement::UP => player.y += 5,
+            movement::DOWN => player.y -= 5,
         }
         camera.position = Vector3::new(player.x as f32, player.y as f32, player.z as f32);
         camera.target = Vector3::new(player.x as f32, player.y as f32, player.z as f32 + 1.0);

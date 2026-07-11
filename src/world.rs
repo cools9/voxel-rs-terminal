@@ -12,6 +12,8 @@ pub enum movement {
     LEFT,
     RIGHT,
     NONE,
+    UP,
+    DOWN,
 }
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub struct Voxel {
