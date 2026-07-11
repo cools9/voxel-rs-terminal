@@ -65,7 +65,7 @@ fn main() {
 
     let mut direction = movement::FRONT;
     while !rl.window_should_close() {
-        rl.disable_cursor(); // call this once outside the loop ideally, not every frame
+        rl.disable_cursor();
 
         match rl.get_key_pressed() {
             Some(KeyboardKey::KEY_UP) | Some(KeyboardKey::KEY_W) => {
@@ -96,6 +96,7 @@ fn main() {
         d.draw_fps(0, 0);
 
         {
+            make_crossair(&mut d);
             let mut c = d.begin_mode3D(camera);
             for (chunk_pos, model) in &models {
                 let offset = Vector3::new(
@@ -312,4 +313,24 @@ fn build_world_meshes(
     }
 
     models
+}
+
+fn make_crossair(d: &mut RaylibDrawHandle) {
+    let width: i32 = d.get_screen_width();
+    let height: i32 = d.get_screen_height();
+    let size_of_crossair: i32 = 10;
+    let center_x = width / 2;
+    let center_y = height / 2;
+    d.draw_line_ex(
+        Vector2::new(center_x as f32 - size_of_crossair as f32, center_y as f32),
+        Vector2::new(center_x as f32 + size_of_crossair as f32, center_y as f32),
+        1.0,
+        Color::WHITE,
+    );
+    d.draw_line_ex(
+        Vector2::new(center_x as f32, center_y as f32 - size_of_crossair as f32),
+        Vector2::new(center_x as f32, center_y as f32 + size_of_crossair as f32),
+        1.0,
+        Color::WHITE,
+    );
 }
