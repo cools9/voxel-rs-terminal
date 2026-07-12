@@ -16,9 +16,9 @@ fn main() {
     let world_size_chunks: i64 = 8;
 
     let mut player = player::Player {
-        x: 50,
-        y: 80,
-        z: -100,
+        x: 50.0,
+        y: 80.0,
+        z: -100.0,
         yaw: 0.0,
         pitch: 0.0,
         sensitivity: 0.0003,
@@ -34,8 +34,8 @@ fn main() {
     let models = world::build_world_meshes(&world, &thread, &mut rl);
 
     let mut direction = movement::NONE;
+    rl.disable_cursor();
     while !rl.window_should_close() {
-        rl.hide_cursor();
         let mouse_delta = rl.get_mouse_delta();
         //camera.update_camera(CameraMode::CAMERA_FREE);
 
@@ -54,15 +54,30 @@ fn main() {
         } else {
             movement::NONE
         };
+        let flat_forward = Vector3::new(player.yaw.cos(), 0.0, player.yaw.sin());
+        let right = Vector3::new(-player.yaw.sin(), 0.0, player.yaw.cos());
+        let speed = 0.5; // tune this
 
         match direction {
-            movement::FRONT => player.x += 5,
-            movement::BACK => player.x -= 5,
-            movement::LEFT => player.z -= 5,
-            movement::RIGHT => player.z += 5,
-            movement::NONE => {}
-            movement::UP => player.y += 5,
-            movement::DOWN => player.y -= 5,
+            player::movement::FRONT => {
+                player.x += flat_forward.x * speed;
+                player.z += flat_forward.z * speed;
+            }
+            player::movement::BACK => {
+                player.x -= flat_forward.x * speed;
+                player.z -= flat_forward.z * speed;
+            }
+            player::movement::RIGHT => {
+                player.x += right.x * speed;
+                player.z += right.z * speed;
+            }
+            player::movement::LEFT => {
+                player.x -= right.x * speed;
+                player.z -= right.z * speed;
+            }
+            player::movement::UP => player.y += speed,
+            player::movement::DOWN => player.y -= speed,
+            player::movement::NONE => {}
         }
 
         player.yaw += mouse_delta.x * player.sensitivity;

@@ -1,7 +1,7 @@
 pub struct Player {
-    pub x: i64,
-    pub y: i64,
-    pub z: i64,
+    pub x: f32,
+    pub y: f32,
+    pub z: f32,
     pub yaw: f32,
     pub pitch: f32,
     pub sensitivity: f32,
