@@ -33,6 +33,9 @@ fn main() {
     let world = world::generate_world(world_size_chunks);
     let models = world::build_world_meshes(&world, &thread, &mut rl);
 
+    let triangle_count = world::count_triangles(&models);
+    println!("Triangle count: {}", triangle_count);
+
     let mut direction = movement::NONE;
     rl.disable_cursor();
     while !rl.window_should_close() {
@@ -92,9 +95,16 @@ fn main() {
         let mut d = rl.begin_drawing(&thread);
         d.clear_background(Color::SKYBLUE);
         d.draw_fps(0, 0);
-
+        /*
+        d.draw_text(
+            triangle_count.to_string().as_str(),
+            1,
+            1,
+            100,
+            Color::ORANGE,
+        );
+        */
         {
-            make_crossair(&mut d);
             let mut c = d.begin_mode3D(camera);
             for (chunk_pos, model) in &models {
                 let offset = Vector3::new(
@@ -105,6 +115,7 @@ fn main() {
                 c.draw_model(model, offset, 1.0, Color::WHITE);
             }
         }
+        make_crossair(&mut d);
     }
 }
 

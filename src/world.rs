@@ -239,3 +239,11 @@ pub fn build_world_meshes(
 
     models
 }
+
+pub fn count_triangles(models: &FxHashMap<ChunkPos, Model>) -> i32 {
+    models
+        .values()
+        .flat_map(|model| model.meshes())
+        .map(|mesh| mesh.triangleCount)
+        .sum()
+}
