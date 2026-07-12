@@ -9,8 +9,8 @@ use crate::world::*;
 fn main() {
     let (mut rl, thread) = raylib::init()
         .size(1280, 720)
-        .title("demo")
-        .fullscreen()
+        .title("voxel-rs")
+        //.fullscreen()
         .vsync()
         .build();
     let world_size_chunks: i64 = 8;

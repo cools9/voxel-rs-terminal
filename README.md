@@ -25,7 +25,7 @@ This started as an attempt at a Minecraft clone. For every hour I spent coding, 
 | `Left Shift` | Move down |
 | Mouse | Look around |
  
-## Building
+## Running it on your computer
  
 ```bash
 cargo run

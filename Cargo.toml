@@ -1,7 +1,10 @@
 [package]
-name = "voxel-rs-terminal"
+name = "voxel-rs"
 version = "0.1.0"
 edition = "2024"
+description = "A voxel rendering thingg"
+repository = "https://github.com/cools9/voxel-rs"
+readme="README.md"
 
 [dependencies]
 raylib = "6.0.0"
