@@ -28,7 +28,7 @@ This started as an attempt at a Minecraft clone. For every hour I spent coding, 
 ## Running it on your computer
  
 ```bash
-cargo run
+cargo install voxel-rs
 ```
  
 ## Status
