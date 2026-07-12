@@ -5,6 +5,7 @@ edition = "2024"
 description = "A voxel rendering thingg"
 repository = "https://github.com/cools9/voxel-rs"
 readme="README.md"
+license = "MIT"
 
 [dependencies]
 raylib = "6.0.0"
