@@ -1,20 +1,6 @@
 use raylib::prelude::*;
 use rustc_hash::FxHashMap;
 
-pub struct Player {
-    pub x: i64,
-    pub y: i64,
-    pub z: i64,
-}
-pub enum movement {
-    FRONT,
-    BACK,
-    LEFT,
-    RIGHT,
-    NONE,
-    UP,
-    DOWN,
-}
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub struct Voxel {
     pub kind: VoxelType,
